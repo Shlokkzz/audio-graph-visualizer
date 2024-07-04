@@ -1,15 +1,28 @@
 {
   "name": "audio-graph-visualizer",
   "version": "1.0.0",
-  "description": "",
+  "description": "Create an audio routing graph and analyze through graphical methods",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build"
   },
-  "author": "",
+  "author": "Shlok",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shlokkzz/audio-graph-visualizer.git"
+  },
+  "keywords": [
+    "audio",
+    "routing",
+    "graph",
+    "analyze",
+    "analyzer",
+    "visualizer",
+    "visualization"
+  ],
   "dependencies": {
     "@types/chart.js": "^2.9.41",
     "@types/node": "18.11.9",
@@ -52,5 +65,10 @@
     "fastq": "^1.17.1",
     "postcss": "^8.4.18",
     "tailwindcss": "^3.2.1"
-  }
+  },
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Shlokkzz/audio-graph-visualizer/issues"
+  },
+  "homepage": "https://github.com/Shlokkzz/audio-graph-visualizer#readme"
 }
