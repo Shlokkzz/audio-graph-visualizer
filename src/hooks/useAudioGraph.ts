@@ -12,6 +12,9 @@ import {
     CustomNode,
   } from "../nodes/nodeTypes"
 
+  // preset fucntion
+  import { presetData } from "../nodes/presets/presetData";
+
   // AUDIO ROUTING GRAPH FUNCTIONS
 export const useAudioGraph = () => {
 
@@ -124,9 +127,6 @@ export const useAudioGraph = () => {
     setEdges([]);
     setSelectedNode(null);
     handleChanges(audioCtx,source,analyser);
-    // Optionally disconnect all audio nodes from the audio context
-    // Implement as needed based on your audio node handling
-    // removes filter
   };
 
   const handleNodeClick = (event: React.MouseEvent, node: Node) => {
@@ -134,5 +134,49 @@ export const useAudioGraph = () => {
     setSelectedNode(node);
   };
 
-  return { nodes,setNodes, edges,setEdges, selectedNode, handleAddNode,handleReset,handleNodeClick,handleChanges,onNodesChange,onEdgesChange };
+
+  const handleAddPresetData = (
+    newNodeData: AudioNodeData[],
+    audioCtx:AudioContext,source:MediaStreamAudioSourceNode,analyser:AnalyserNode
+  ) => {
+    let index = 1;
+    const updatedEdges = [];
+    for(let i=0;i<newNodeData.length;i++){
+
+    const newNodeId = (index).toString();
+    const newNode: CustomNode = {
+      id: newNodeId,
+      type: "default",
+      data: newNodeData[i],
+      position:
+        nodes.length == 0
+          ? { x: 250, y: 50 }
+          : {
+              x: 250+ 20*index,
+              y: 50+ 20*index,
+            }, // Adjust the position as needed
+      style: {
+        backgroundColor:
+          newNodeData[i].type === "dynamicsCompressor"
+            ? "#f4e2d8"
+            : newNodeData[i].type === "gain"
+            ? "#ddd6f3"
+            : "ffedbc",
+      },
+    };
+    updatedEdges.push(newNode);
+    index++;
+  }
+    setNodes(updatedEdges);
+    handleChanges(audioCtx!,source!,analyser!);
+  };
+
+  const handlePreset = (event:React.ChangeEvent<HTMLSelectElement>,audioCtx:AudioContext,source:MediaStreamAudioSourceNode,analyser:AnalyserNode): void=>{
+      // setSelectedValue(event.target.value);
+      handleReset(audioCtx!,source!,analyser!);
+      const data:AudioNodeData[]=presetData(event.target.value,audioCtx!);
+      handleAddPresetData(data,audioCtx,source,analyser);
+  }
+
+  return { nodes,setNodes, edges,setEdges, selectedNode, handleAddNode,handleReset,handleNodeClick,handleChanges,onNodesChange,onEdgesChange,handlePreset };
 };
