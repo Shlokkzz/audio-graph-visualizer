@@ -1,5 +1,5 @@
 import React from 'react';
-interface BiquadFilterNodeProps {
+export interface BiquadFilterNodeProps {
   data: {
     id: string;
     label: string;
@@ -10,7 +10,7 @@ interface BiquadFilterNodeProps {
   };
 }
 
-const BiquadFilterNode :React.FC<BiquadFilterNodeProps> =({ data }) => {
+export const BiquadFilterNode2 :React.FC<BiquadFilterNodeProps> =({ data }) => {
   return (
     <div style={{ padding: 10, background: '#FFC107' }}>
       <strong>{data.label}</strong>
@@ -22,4 +22,3 @@ const BiquadFilterNode :React.FC<BiquadFilterNodeProps> =({ data }) => {
   );
 };
 
-export default BiquadFilterNode;
