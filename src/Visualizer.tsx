@@ -1,44 +1,27 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
 import ReactFlow, {
-  useNodesState,
-  useEdgesState,
   addEdge,
   Controls,
-  Node,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import {
   BiquadFilterNodeData,
   DynamicsCompressorNodeData,
   GainNodeData,
-  AudioNodeData,
-  CustomNode,
   nodeTypes
 } from "./nodes/nodeTypes"
 
 import { useAudioGraph } from "./hooks/useAudioGraph";
+import { useVisualization } from "./hooks/useVisualization";
+import { useInit } from "./hooks/useInit";
 
 Chart.register(...registerables);
 
 const Visualizer: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const canvasRefOriginal = useRef<HTMLCanvasElement | null>(null);
 
   const canvasRefSnapshot = useRef<HTMLCanvasElement | null>(null);
   const canvasRefOriginalSnapshot = useRef<HTMLCanvasElement | null>(null);
-
-  const [audioCtx, setAudioCtx] = useState<AudioContext | null>(null);
-  const [audioCtxOriginal, setAudioCtxOriginal] = useState<AudioContext | null>(
-    null
-  );
-  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
-  const [analyserOriginal, setAnalyserOriginal] = useState<AnalyserNode | null>(
-    null
-  );
-  const [source, setSource] = useState<MediaStreamAudioSourceNode | null>(null);
-  const [sourceOriginal, setSourceOriginal] =
-    useState<MediaStreamAudioSourceNode | null>(null);
 
   const [visualizationType, setVisualizationType] = useState<
     "sinewave" | "frequencybars"
@@ -46,79 +29,9 @@ const Visualizer: React.FC = () => {
 
   const [selectedValue, setSelectedValue] = useState<string>('self-configure');
 
-  // INIT
-  useEffect(() => {
-    const initAudio = async () => {
-      try {
-        const audioContext = new AudioContext();
-        const stream1 = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            noiseSuppression: true,
-            echoCancellation: true, // Optional: Enable echo cancellation
-          },
-        });
-        const sourceNode = audioContext.createMediaStreamSource(stream1);
-        const analyserNode = audioContext.createAnalyser();
+  const {audioCtx,source,analyser,analyserOriginal}=useInit();
 
-        analyserNode.fftSize = 2048;
-        analyserNode.minDecibels = -90;
-        analyserNode.maxDecibels = -10;
-        analyserNode.smoothingTimeConstant = 0.85;
-
-        sourceNode.connect(analyserNode);
-
-        analyserNode.connect(audioContext.destination);
-
-        setAudioCtx(audioContext);
-        setAnalyser(analyserNode);
-        setSource(sourceNode);
-
-        // original
-        const audioContextOriginal = new AudioContext();
-        const streamOriginal1 = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-        const sourceNodeOriginal =
-          audioContextOriginal.createMediaStreamSource(streamOriginal1);
-
-        const analyserNodeOriginal = audioContextOriginal.createAnalyser();
-
-        analyserNodeOriginal.fftSize = 2048;
-        analyserNodeOriginal.minDecibels = -90;
-        analyserNodeOriginal.maxDecibels = -10;
-        analyserNodeOriginal.smoothingTimeConstant = 0.85;
-
-        sourceNodeOriginal.connect(analyserNodeOriginal);
-        // analyserNodeOriginal.connect(audioContext.destination);
-
-        setAudioCtxOriginal(audioContextOriginal);
-        setAnalyserOriginal(analyserNodeOriginal);
-        setSourceOriginal(sourceNodeOriginal);
-
-        console.log("update");
-      } catch (error) {
-        console.error("Error initializing audio context:", error);
-      }
-    };
-
-    initAudio();
-
-    return () => {
-      if (audioCtx) {
-        audioCtx.close();
-      }
-      if (audioCtxOriginal) {
-        audioCtxOriginal.close();
-      }
-      if (source) {
-        source.disconnect();
-      }
-      if (sourceOriginal) {
-        sourceOriginal.disconnect();
-      }
-    };
-  }, []);
-
+  // AUDIO GRAPH
   const {
     nodes,
     setNodes,
@@ -130,7 +43,8 @@ const Visualizer: React.FC = () => {
     handleNodeClick,
     handleChanges,
     onNodesChange,
-    onEdgesChange 
+    onEdgesChange,
+    handlePreset
   } = useAudioGraph();
 
   const onConnect = useCallback(
@@ -141,207 +55,11 @@ const Visualizer: React.FC = () => {
     []
   );
 
-  // SNAPSHOTS AND DISPLAY
-  // For processed graph
-  useEffect(() => {
-    if (!canvasRef.current) return;
+  // DISPLAY
+   const {canvasRef} = useVisualization(visualizationType,analyser!);
+   const { canvasRef:canvasRefOriginal } = useVisualization(visualizationType,analyserOriginal!);
 
-    const canvas = canvasRef.current;
-    const canvasCtx = canvas.getContext("2d", { willReadFrequently: true });
-
-    if (!canvasCtx) return;
-
-    const intendedWidth = 1400; // Set the desired width here
-    const intendedHeight = 800; // Set the desired height here
-
-    canvas.setAttribute("width", intendedWidth.toString());
-    canvas.setAttribute("height", intendedHeight.toString());
-
-    const WIDTH = canvas.width;
-    const HEIGHT = canvas.height;
-
-    let animationId: number;
-
-    const draw = (timestamp: number) => {
-      if (!analyser || !canvasCtx) return;
-
-      if (visualizationType === "sinewave") {
-        analyser.fftSize = 4096;
-        const bufferLength = analyser.fftSize;
-        const dataArray = new Uint8Array(bufferLength);
-
-        analyser.getByteTimeDomainData(dataArray);
-        canvasCtx.fillStyle = "#dbfdf5";
-        canvasCtx.lineWidth = 2;
-        canvasCtx.strokeStyle = "rgb(0, 0, 0)";
-        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-        canvasCtx.beginPath();
-        const sliceWidth = (canvas.width * 1.0) / bufferLength;
-        let x = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          const v = dataArray[i] / 128.0;
-          const y = (v * canvas.height) / 2;
-          if (i === 0) {
-            canvasCtx.moveTo(x, y);
-          } else {
-            canvasCtx.lineTo(x, y);
-          }
-          x += sliceWidth;
-        }
-        canvasCtx.lineTo(canvas.width, canvas.height / 2);
-        canvasCtx.stroke();
-      } else if (visualizationType === "frequencybars") {
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        analyser.getByteFrequencyData(dataArray);
-        canvasCtx.fillStyle = "white";
-        canvasCtx.font = "12px Arial";
-        canvasCtx.fillText("Frequency (Hz)", WIDTH / 2, HEIGHT - 10);
-        const barWidth = (WIDTH / bufferLength) * 5;
-        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-        let x = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          const barHeight = dataArray[i] * 6;
-          canvasCtx.fillStyle = `rgb(${barHeight + 100},50,50)`;
-          canvasCtx.fillRect(
-            x,
-            HEIGHT - barHeight / 2,
-            barWidth,
-            barHeight / 2
-          );
-          x += barWidth + 1;
-        }
-      }
-      if (visualizationType === "frequencybars") {
-        const step = 20; // Grid step size
-
-        canvasCtx.strokeStyle = "#ddd";
-
-        // Draw grid
-        for (let x = 0; x <= WIDTH; x += step) {
-          canvasCtx.beginPath();
-          canvasCtx.moveTo(x, 0);
-          canvasCtx.lineTo(x, HEIGHT);
-          canvasCtx.stroke();
-          // canvasCtx.fillText(x, x, 10);
-        }
-        for (let y = 0; y <= HEIGHT; y += step) {
-          canvasCtx.beginPath();
-          canvasCtx.moveTo(0, y);
-          canvasCtx.lineTo(WIDTH, y);
-          canvasCtx.stroke();
-          // canvasCtx.fillText(y, 0, y + 10);
-        }
-      }
-
-      animationId = requestAnimationFrame(draw);
-    };
-
-    animationId = requestAnimationFrame(draw);
-
-    return () => cancelAnimationFrame(animationId);
-  }, [analyser, visualizationType]);
-
-  // For original graph
-  useEffect(() => {
-    if (!canvasRefOriginal.current) return;
-
-    const canvas = canvasRefOriginal.current;
-    const canvasCtx = canvas.getContext("2d", { willReadFrequently: true });
-
-    if (!canvasCtx) return;
-
-    const intendedWidth = 1400; // Set the desired width here
-    const intendedHeight = 800; // Set the desired height here
-
-    canvas.setAttribute("width", intendedWidth.toString());
-    canvas.setAttribute("height", intendedHeight.toString());
-
-    const WIDTH = canvas.width;
-    const HEIGHT = canvas.height;
-
-    let animationId: number;
-
-    const draw = (timestamp: number) => {
-      if (!analyserOriginal || !canvasCtx) return;
-
-      if (visualizationType === "sinewave") {
-        analyserOriginal.fftSize = 4096;
-        const bufferLength = analyserOriginal.fftSize;
-        const dataArray = new Uint8Array(bufferLength);
-
-        analyserOriginal.getByteTimeDomainData(dataArray);
-        canvasCtx.fillStyle = "#dbfdf5";
-        canvasCtx.lineWidth = 2;
-        canvasCtx.strokeStyle = "rgb(0, 0, 0)";
-        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-        canvasCtx.beginPath();
-        const sliceWidth = (canvas.width * 1.0) / bufferLength;
-        let x = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          const v = dataArray[i] / 128.0;
-          const y = (v * canvas.height) / 2;
-          if (i === 0) {
-            canvasCtx.moveTo(x, y);
-          } else {
-            canvasCtx.lineTo(x, y);
-          }
-          x += sliceWidth;
-        }
-        canvasCtx.lineTo(canvas.width, canvas.height / 2);
-        canvasCtx.stroke();
-      } else if (visualizationType === "frequencybars") {
-        const bufferLength = analyserOriginal.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        analyserOriginal.getByteFrequencyData(dataArray);
-        canvasCtx.fillStyle = "white";
-        canvasCtx.font = "12px Arial";
-        canvasCtx.fillText("Frequency (Hz)", WIDTH / 2, HEIGHT - 10);
-        const barWidth = (WIDTH / bufferLength) * 5;
-        canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-        let x = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          const barHeight = dataArray[i] * 6;
-          canvasCtx.fillStyle = `rgb(${barHeight + 100},50,50)`;
-          canvasCtx.fillRect(
-            x,
-            HEIGHT - barHeight / 2,
-            barWidth,
-            barHeight / 2
-          );
-          x += barWidth + 1;
-        }
-      }
-
-      if (visualizationType === "frequencybars") {
-        const step = 20; // Grid step size
-
-        canvasCtx.strokeStyle = "#ddd";
-
-        // Draw grid
-        for (let x = 0; x <= WIDTH; x += step) {
-          canvasCtx.beginPath();
-          canvasCtx.moveTo(x, 0);
-          canvasCtx.lineTo(x, HEIGHT);
-          canvasCtx.stroke();
-          // canvasCtx.fillText(x, x, 10);
-        }
-        for (let y = 0; y <= HEIGHT; y += step) {
-          canvasCtx.beginPath();
-          canvasCtx.moveTo(0, y);
-          canvasCtx.lineTo(WIDTH, y);
-          canvasCtx.stroke();
-          // canvasCtx.fillText(y, 0, y + 10);
-        }
-      }
-      animationId = requestAnimationFrame(draw);
-    };
-
-    animationId = requestAnimationFrame(draw);
-
-    return () => cancelAnimationFrame(animationId);
-  }, [analyserOriginal, visualizationType]);
-
+   // SNAPSHOT
   const handleSnapshot = () => {
     console.log("CLICKED");
     const originalCanvas = canvasRefOriginal.current;
@@ -397,116 +115,11 @@ const Visualizer: React.FC = () => {
     setVisualizationType(type);
   };
 
-
   // PRESETS
-  const handleAddPresetData = (
-    newNodeData: AudioNodeData[]
-  ) => {
-    let index = 1;
-    const updatedEdges = [];
-    for(let i=0;i<newNodeData.length;i++){
-
-    
-    const newNodeId = (index).toString();
-
-
-    const newNode: CustomNode = {
-      id: newNodeId,
-      type: "default",
-      data: newNodeData[i],
-      position:
-        nodes.length == 0
-          ? { x: 250, y: 50 }
-          : {
-              x: 250+ 20*index,
-              y: 50+ 20*index,
-            }, // Adjust the position as needed
-      style: {
-        backgroundColor:
-          newNodeData[i].type === "dynamicsCompressor"
-            ? "#f4e2d8"
-            : newNodeData[i].type === "gain"
-            ? "#ddd6f3"
-            : "ffedbc",
-      },
-    };
-    updatedEdges.push(newNode);
-    index++;
+  const handlePresetChange = (event:React.ChangeEvent<HTMLSelectElement>): void=>{
+    setSelectedValue(event.target.value);
+    handlePreset(event,audioCtx!,source!,analyser!);
   }
-    setNodes(updatedEdges);
-    handleChanges(audioCtx!,source!,analyser!);
-  };
-
-  const handlePreset = (event:React.ChangeEvent<HTMLSelectElement>): void=>{
-      setSelectedValue(event.target.value);
-      if(event.target.value==='Preset-1'){
-        handleReset(audioCtx!,source!,analyser!);
-        const data:AudioNodeData[]=[
-          {
-            id: "1",
-          label: `Biquad Filter 1`,
-          type: "biquadFilter",
-          audioNode: audioCtx!.createBiquadFilter(),
-          frequency: 3500,
-          Q: 1,
-          filterType: "lowpass",
-          },
-          {
-            id: "2",
-          label: `Dynamics Compressor 2`,
-          type: "dynamicsCompressor",
-          audioNode: audioCtx!.createDynamicsCompressor(),
-          threshold: -24,
-          knee: 20,
-          attack: 0.4,
-          release: 0.25,
-          ratio: 12,
-          },
-        ]
-        handleAddPresetData(data);
-      }
-      else if(event.target.value==='Preset-2'){
-        handleReset(audioCtx!,source!,analyser!);
-        const data:AudioNodeData[]=[
-          {
-            id: "1",
-          label: `Biquad Filter 1`,
-          type: "biquadFilter",
-          audioNode: audioCtx!.createBiquadFilter(),
-          frequency: 3500,
-          Q: 1,
-          filterType: "lowpass",
-          },
-          {
-            id: "2",
-          label: `Dynamics Compressor 2`,
-          type: "dynamicsCompressor",
-          audioNode: audioCtx!.createDynamicsCompressor(),
-          threshold: -24,
-          knee: 20,
-          attack: 0.4,
-          release: 0.25,
-          ratio: 12,
-          },
-        ]
-        handleAddPresetData(data);
-      }
-      else if(event.target.value==='Preset-3'){
-        handleReset(audioCtx!,source!,analyser!);
-      }
-      else if(event.target.value==='Preset-4'){
-        handleReset(audioCtx!,source!,analyser!);
-      }
-      else if(event.target.value==='Preset-5'){
-        handleReset(audioCtx!,source!,analyser!);
-      }
-      else{
-        // self configure
-        handleReset(audioCtx!,source!,analyser!);
-        handleChanges(audioCtx!,source!,analyser!);
-      }
-  }
-
 
   // CSS for active filter button
   const buttonStyle = (isActive: boolean) => ({
@@ -879,7 +492,7 @@ const Visualizer: React.FC = () => {
             </label>
             <br />
             <br />
-            <select style={filterButton(false)}  onChange={handlePreset} value= {selectedValue}>
+            <select style={filterButton(false)}  onChange={handlePresetChange} value= {selectedValue}>
               <option value="Preset-1">Preset-1</option>
               <option value="Preset-2">Preset-2</option>
               <option value="Preset-3">Preset-3</option>
