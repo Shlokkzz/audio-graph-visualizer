@@ -1,6 +1,6 @@
 import React from 'react';
 
-    interface GainNodeProps {
+    export interface GainNodeProps {
       data: {
         type: "gain";
     audioNode: GainNode;
@@ -8,7 +8,7 @@ import React from 'react';
     label: string;
       };
     }
-const GainNode :React.FC<GainNodeProps>= ({ data }) => {
+export const GainNode2 :React.FC<GainNodeProps>= ({ data }) => {
   return (
     <div style={{ padding: 10, background: '#8BC34A' }}>
       <strong>{data.label}</strong>
@@ -18,4 +18,3 @@ const GainNode :React.FC<GainNodeProps>= ({ data }) => {
   );
 };
 
-export default GainNode;

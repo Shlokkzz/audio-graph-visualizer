@@ -1,7 +1,7 @@
 import { Node } from "reactflow";
-import BiquadFilterNode2 from "./BiquadFilterNode";
-import DynamicsCompressorNode2 from "./DynamicsCompressorNode";
-import GainNode2 from "./GainNode";
+import {BiquadFilterNode2,BiquadFilterNodeProps} from "./BiquadFilterNode";
+import {DynamicsCompressorNode2,DynamicsCompressorNodeProps} from "./DynamicsCompressorNode";
+import {GainNode2,GainNodeProps} from "./GainNode";
 
 export interface BaseNodeData {
   id: string;
@@ -40,6 +40,7 @@ export type AudioNodeData =
 export interface CustomNode extends Node {
   data: AudioNodeData;
 }
+
 export const nodeTypes = {
   biquadFilter: BiquadFilterNode2,
   dynamicsCompressor: DynamicsCompressorNode2,

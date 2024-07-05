@@ -1,5 +1,5 @@
 import React from 'react';
-interface DynamicsCompressorNodeProps {
+export interface DynamicsCompressorNodeProps {
   data: {
     id: string;
     label: string;
@@ -11,7 +11,7 @@ interface DynamicsCompressorNodeProps {
     ratio: number;
   };
 }
-const DynamicsCompressorNode :React.FC<DynamicsCompressorNodeProps>= ({ data }) => {
+export const DynamicsCompressorNode2 :React.FC<DynamicsCompressorNodeProps>= ({ data }) => {
   return (
     <div style={{ padding: 10, background: '#03A9F4' }}>
       <strong>{data.label}</strong>
@@ -25,4 +25,3 @@ const DynamicsCompressorNode :React.FC<DynamicsCompressorNodeProps>= ({ data }) 
   );
 };
 
-export default DynamicsCompressorNode;
