@@ -7,54 +7,17 @@ import ReactFlow, {
   Controls,
   Node,
 } from "reactflow";
-// import "reactflow/dist/style.css";
+import "reactflow/dist/style.css";
+import {
+  BiquadFilterNodeData,
+  DynamicsCompressorNodeData,
+  GainNodeData,
+  AudioNodeData,
+  CustomNode,
+  nodeTypes
+} from "./nodes/nodeTypes"
 
-import BiquadFilterNode2 from "./nodes/BiquadFilterNode";
-import DynamicsCompressorNode2 from "./nodes/DynamicsCompressorNode";
-import GainNode2 from "./nodes/GainNode";
-
-interface BaseNodeData {
-  id: string;
-  label: string;
-}
-
-interface BiquadFilterNodeData extends BaseNodeData {
-  type: "biquadFilter";
-  audioNode: BiquadFilterNode;
-  frequency: number;
-  Q: number;
-  filterType: BiquadFilterType;
-}
-
-interface DynamicsCompressorNodeData extends BaseNodeData {
-  type: "dynamicsCompressor";
-  audioNode: DynamicsCompressorNode;
-  threshold: number;
-  knee: number;
-  attack: number;
-  release: number;
-  ratio: number;
-}
-
-interface GainNodeData extends BaseNodeData {
-  type: "gain";
-  audioNode: GainNode;
-  gain: number;
-}
-
-type AudioNodeData =
-  | BiquadFilterNodeData
-  | DynamicsCompressorNodeData
-  | GainNodeData;
-
-interface CustomNode extends Node {
-  data: AudioNodeData;
-}
-const nodeTypes = {
-  biquadFilter: BiquadFilterNode2,
-  dynamicsCompressor: DynamicsCompressorNode2,
-  gain: GainNode2,
-};
+import { useAudioGraph } from "./hooks/useAudioGraph";
 
 Chart.register(...registerables);
 
@@ -80,12 +43,6 @@ const Visualizer: React.FC = () => {
   const [visualizationType, setVisualizationType] = useState<
     "sinewave" | "frequencybars"
   >("sinewave");
-
-  //Audio routing graph
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-
-  const [selectedNode, setSelectedNode] = useState<CustomNode | null>(null);
 
   const [selectedValue, setSelectedValue] = useState<string>('self-configure');
 
@@ -162,116 +119,19 @@ const Visualizer: React.FC = () => {
     };
   }, []);
 
-
-
-
-  
-  // AUDIO ROUTING GRAPH FUNCTIONS
-  const handleAddNode = (
-    nodeType: "biquadFilter" | "dynamicsCompressor" | "gain"
-  ) => {
-    const newNodeId = (nodes.length + 1).toString();
-    let newNodeData: AudioNodeData;
-
-    switch (nodeType) {
-      case "biquadFilter":
-        newNodeData = {
-          id: newNodeId,
-          label: `Biquad Filter ${newNodeId}`,
-          type: "biquadFilter",
-          audioNode: audioCtx!.createBiquadFilter(),
-          frequency: 350,
-          Q: 1,
-          filterType: "lowpass",
-        };
-        break;
-      case "dynamicsCompressor":
-        newNodeData = {
-          id: newNodeId,
-          label: `Dynamics Compressor ${newNodeId}`,
-          type: "dynamicsCompressor",
-          audioNode: audioCtx!.createDynamicsCompressor(),
-          threshold: -24,
-          knee: 30,
-          attack: 0.03,
-          release: 0.25,
-          ratio: 12,
-        };
-        break;
-      case "gain":
-        newNodeData = {
-          id: newNodeId,
-          label: `Gain ${newNodeId}`,
-          type: "gain",
-          audioNode: audioCtx!.createGain(),
-          gain: 1,
-        };
-        break;
-    }
-
-    const newNode: CustomNode = {
-      id: newNodeId,
-      type: "default",
-      data: newNodeData,
-      position:
-        nodes.length == 0
-          ? { x: 250, y: 50 }
-          : {
-              x: nodes[nodes.length - 1].position.x + 20,
-              y: nodes[nodes.length - 1].position.y + 20,
-            }, // Adjust the position as needed
-      style: {
-        backgroundColor:
-          nodeType === "dynamicsCompressor"
-            ? "#f4e2d8"
-            : nodeType === "gain"
-            ? "#ddd6f3"
-            : "ffedbc",
-      },
-    };
-
-    setNodes((nds) => [...nds, newNode]);
-    handleChanges();
-  };
-
-  const handleChanges = () => {
-    if (!audioCtx || !source || !analyser) return;
-    const updatedEdges = [];
-    if (nodes.length == 0) {
-      source!.disconnect();
-      source!.connect(analyser!);
-      analyser!.connect(audioCtx!.destination);
-    } else {
-      const previousNodeId = nodes[0].id;
-      source!.disconnect();
-      source?.connect(nodes[0].data.audioNode);
-      for (let i = 1; i < nodes.length; i++) {
-        // edge naming id
-        updatedEdges.push({
-          id: `e${nodes[i - 1].id}-${nodes[i].id}`,
-          source: nodes[i - 1].id,
-          target: nodes[i].id,
-          animated: true,
-          style: { stroke: "#fff" },
-        });
-        nodes[i - 1].data.audioNode.connect(nodes[i].data.audioNode);
-      }
-      nodes[nodes.length - 1].data.audioNode.connect(analyser!);
-      analyser!.connect(audioCtx!.destination);
-    }
-    setEdges(updatedEdges);
-    console.log(nodes)
-  };
-
-  const handleReset = () => {
-    setNodes([]);
-    setEdges([]);
-    setSelectedNode(null);
-    handleChanges();
-    // Optionally disconnect all audio nodes from the audio context
-    // Implement as needed based on your audio node handling
-    // removes filter
-  };
+  const {
+    nodes,
+    setNodes,
+    edges,
+    setEdges, 
+    selectedNode, 
+    handleAddNode,
+    handleReset,
+    handleNodeClick,
+    handleChanges,
+    onNodesChange,
+    onEdgesChange 
+  } = useAudioGraph();
 
   const onConnect = useCallback(
     (params: any) =>
@@ -280,13 +140,6 @@ const Visualizer: React.FC = () => {
       ),
     []
   );
-
-  const handleNodeClick = (event: React.MouseEvent, node: Node) => {
-    console.log(node);
-    setSelectedNode(node);
-  };
-
-
 
   // SNAPSHOTS AND DISPLAY
   // For processed graph
@@ -581,13 +434,13 @@ const Visualizer: React.FC = () => {
     index++;
   }
     setNodes(updatedEdges);
-    handleChanges();
+    handleChanges(audioCtx!,source!,analyser!);
   };
 
   const handlePreset = (event:React.ChangeEvent<HTMLSelectElement>): void=>{
       setSelectedValue(event.target.value);
       if(event.target.value==='Preset-1'){
-        handleReset();
+        handleReset(audioCtx!,source!,analyser!);
         const data:AudioNodeData[]=[
           {
             id: "1",
@@ -613,7 +466,7 @@ const Visualizer: React.FC = () => {
         handleAddPresetData(data);
       }
       else if(event.target.value==='Preset-2'){
-        handleReset();
+        handleReset(audioCtx!,source!,analyser!);
         const data:AudioNodeData[]=[
           {
             id: "1",
@@ -637,24 +490,22 @@ const Visualizer: React.FC = () => {
           },
         ]
         handleAddPresetData(data);
-        // Add more
       }
       else if(event.target.value==='Preset-3'){
-        handleReset();
+        handleReset(audioCtx!,source!,analyser!);
       }
       else if(event.target.value==='Preset-4'){
-        handleReset();
+        handleReset(audioCtx!,source!,analyser!);
       }
       else if(event.target.value==='Preset-5'){
-        handleReset();
+        handleReset(audioCtx!,source!,analyser!);
       }
       else{
         // self configure
-        handleReset();
-        handleChanges();
+        handleReset(audioCtx!,source!,analyser!);
+        handleChanges(audioCtx!,source!,analyser!);
       }
   }
-
 
 
   // CSS for active filter button
@@ -720,31 +571,31 @@ const Visualizer: React.FC = () => {
             }}
           >
             <button
-              onClick={() => handleAddNode("biquadFilter")}
+              onClick={() => handleAddNode("biquadFilter",audioCtx!,source!,analyser!)}
               style={buttonStyle(false)}
             >
               Add BiquadFilterNode
             </button>
             <br /> <br />
             <button
-              onClick={() => handleAddNode("dynamicsCompressor")}
+              onClick={() => handleAddNode("dynamicsCompressor",audioCtx!,source!,analyser!)}
               style={buttonStyle(false)}
             >
               Add DynamicsCompressorNode
             </button>
             <br /> <br />
             <button
-              onClick={() => handleAddNode("gain")}
+              onClick={() => handleAddNode("gain",audioCtx!,source!,analyser!)}
               style={buttonStyle(false)}
             >
               Add Gain Node
             </button>
             <br />
             <br />
-            <button onClick={handleReset} style={filterButton(true)}>
+            <button onClick={()=>handleReset(audioCtx!,source!,analyser!)} style={filterButton(true)}>
               RESET
             </button>
-            <button onClick={handleChanges} style={buttonStyle(true)}>
+            <button onClick={()=>handleChanges(audioCtx!,source!,analyser!)} style={buttonStyle(true)}>
               {" "}
               OK{" "}
             </button>
@@ -775,7 +626,7 @@ const Visualizer: React.FC = () => {
                     const node = (selectedNode.data as BiquadFilterNodeData)
                       .audioNode;
                     node.frequency.setValueAtTime(value, audioCtx!.currentTime);
-                    handleChanges(); // Update your audio context
+                    handleChanges(audioCtx!,source!,analyser!); // Update your audio context
                   }}
                   style={{ backgroundColor: "white" }}
                 />
@@ -794,7 +645,7 @@ const Visualizer: React.FC = () => {
                     const node = (selectedNode.data as BiquadFilterNodeData)
                       .audioNode;
                     node.Q.setValueAtTime(value, audioCtx!.currentTime);
-                    handleChanges(); // Update your audio context
+                    handleChanges(audioCtx!,source!,analyser!); // Update your audio context
                   }}
                   style={{ backgroundColor: "white" }}
                 />
@@ -809,7 +660,7 @@ const Visualizer: React.FC = () => {
                     const node = (selectedNode.data as BiquadFilterNodeData)
                       .audioNode;
                     node.type = value;
-                    handleChanges(); // Update your audio context
+                    handleChanges(audioCtx!,source!,analyser!); // Update your audio context
                   }}
                   style={{ backgroundColor: "white" }}
                 >
@@ -859,7 +710,7 @@ const Visualizer: React.FC = () => {
                         value,
                         audioCtx!.currentTime
                       );
-                      handleChanges(); // Update your audio context
+                      handleChanges(audioCtx!,source!,analyser!); // Update your audio context
                     }}
                     style={{ backgroundColor: "white" }}
                   />
@@ -882,7 +733,7 @@ const Visualizer: React.FC = () => {
                         selectedNode.data as DynamicsCompressorNodeData
                       ).audioNode;
                       node.knee.setValueAtTime(value, audioCtx!.currentTime);
-                      handleChanges(); // Update your audio context
+                      handleChanges(audioCtx!,source!,analyser!); // Update your audio context
                     }}
                     style={{ backgroundColor: "white" }}
                   />
@@ -905,7 +756,7 @@ const Visualizer: React.FC = () => {
                         selectedNode.data as DynamicsCompressorNodeData
                       ).audioNode;
                       node.attack.setValueAtTime(value, audioCtx!.currentTime);
-                      handleChanges(); // Update your audio context
+                      handleChanges(audioCtx!,source!,analyser!); // Update your audio context
                     }}
                     style={{ backgroundColor: "white" }}
                   />
@@ -929,7 +780,7 @@ const Visualizer: React.FC = () => {
                         selectedNode.data as DynamicsCompressorNodeData
                       ).audioNode;
                       node.release.setValueAtTime(value, audioCtx!.currentTime);
-                      handleChanges(); // Update your audio context
+                      handleChanges(audioCtx!,source!,analyser!); // Update your audio context
                     }}
                     style={{ backgroundColor: "white" }}
                   />
@@ -952,7 +803,7 @@ const Visualizer: React.FC = () => {
                         selectedNode.data as DynamicsCompressorNodeData
                       ).audioNode;
                       node.ratio.setValueAtTime(value, audioCtx!.currentTime);
-                      handleChanges(); // Update your audio context
+                      handleChanges(audioCtx!,source!,analyser!); // Update your audio context
                     }}
                     style={{ backgroundColor: "white" }}
                   />
@@ -984,7 +835,7 @@ const Visualizer: React.FC = () => {
                     (selectedNode.data as GainNodeData).gain = value;
                     const node = (selectedNode.data as GainNodeData).audioNode;
                     node.gain.setValueAtTime(value, audioCtx!.currentTime);
-                    handleChanges(); // Update your audio context
+                    handleChanges(audioCtx!,source!,analyser!); // Update your audio context
                   }}
                   style={{ backgroundColor: "white" }}
                 />
