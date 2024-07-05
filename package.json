@@ -51,10 +51,7 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@jitsi/rnnoise-wasm": "^0.1.0",
     "@types/audioworklet": "^0.0.55",
-    "@types/emscripten": "^1.39.13",
-    "@types/jitsi-meet": "^2.0.5",
     "@types/lodash": "^4.14.187",
     "@types/webaudioapi": "^0.0.27",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
