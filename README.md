@@ -17,25 +17,12 @@ This tool helps you to create your own audio routing graph and use different vis
 - Multiple visual effects
 
 
-
-
-
-
-
-
 ## Installation
 
-1. **Clone the repository:**
+1. **Install the package**
 
     ```sh
-    git clone https://github.com/Shlokkzz/audio-graph-visualizer.git
-    cd audio-graph-visualizer
-    ```
-
-2. **Install dependencies:**
-
-    ```sh
-    npm install
+    npm i audio-graph-visualizer
     ```
 
 ## Usage
