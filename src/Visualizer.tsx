@@ -1,16 +1,8 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
-import ReactFlow, {
-  addEdge,
-  Controls,
-} from "reactflow";
+import ReactFlow, { addEdge,Controls } from "reactflow";
 // import "reactflow/dist/style.css";
-import {
-  BiquadFilterNodeData,
-  DynamicsCompressorNodeData,
-  GainNodeData,
-  nodeTypes
-} from "./nodes/nodeTypes"
+import {BiquadFilterNodeData,DynamicsCompressorNodeData,GainNodeData,nodeTypes} from "./nodes/nodeTypes"
 
 import { useAudioGraph } from "./hooks/useAudioGraph";
 import { useVisualization } from "./hooks/useVisualization";
@@ -23,9 +15,7 @@ const Visualizer: React.FC = () => {
   const canvasRefSnapshot = useRef<HTMLCanvasElement | null>(null);
   const canvasRefOriginalSnapshot = useRef<HTMLCanvasElement | null>(null);
 
-  const [visualizationType, setVisualizationType] = useState<
-    "sinewave" | "frequencybars"
-  >("sinewave");
+  const [visualizationType, setVisualizationType] = useState<"sinewave" | "frequencybars">("sinewave");
 
   const [selectedValue, setSelectedValue] = useState<string>('self-configure');
 
@@ -34,7 +24,6 @@ const Visualizer: React.FC = () => {
   // AUDIO GRAPH
   const {
     nodes,
-    setNodes,
     edges,
     setEdges, 
     selectedNode, 
@@ -73,32 +62,14 @@ const Visualizer: React.FC = () => {
       snapshotOriginalCanvas &&
       snapshotMixedCanvas
     ) {
-      const ctxOriginal = originalCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
-      const ctxMixed = mixedCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
-      const ctxSnapshotOriginal = snapshotOriginalCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
-      const ctxSnapshotMixed = snapshotMixedCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
+      const ctxOriginal = originalCanvas.getContext("2d", {willReadFrequently: true,});
+      const ctxMixed = mixedCanvas.getContext("2d", {willReadFrequently: true,});
+      const ctxSnapshotOriginal = snapshotOriginalCanvas.getContext("2d", {willReadFrequently: true,});
+      const ctxSnapshotMixed = snapshotMixedCanvas.getContext("2d", {willReadFrequently: true,});
 
       // Get the image data from both original canvases
-      const originalImageData = ctxOriginal!.getImageData(
-        0,
-        0,
-        originalCanvas.width,
-        originalCanvas.height
-      );
-      const mixedImageData = ctxMixed!.getImageData(
-        0,
-        0,
-        mixedCanvas.width,
-        mixedCanvas.height
-      );
+      const originalImageData = ctxOriginal!.getImageData(0,0,originalCanvas.width,originalCanvas.height);
+      const mixedImageData = ctxMixed!.getImageData(0,0,mixedCanvas.width,mixedCanvas.height);
 
       // Set the size of snapshot canvases to match original canvases if they are different
       snapshotOriginalCanvas.width = originalCanvas.width;
@@ -470,8 +441,6 @@ const Visualizer: React.FC = () => {
           >
             <Controls />
           </ReactFlow>
-
-          {/* ADD MORE  */}
 
           <div
             style={{
