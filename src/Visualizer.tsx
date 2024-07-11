@@ -1,8 +1,15 @@
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Chart, registerables } from "chart.js";
-import ReactFlow, { addEdge,Controls } from "reactflow";
-// import "reactflow/dist/style.css";
-import {BiquadFilterNodeData,DynamicsCompressorNodeData,GainNodeData,nodeTypes} from "./nodes/nodeTypes"
+import ReactFlow, {
+  addEdge,
+  Controls,
+} from "reactflow";
+import {
+  BiquadFilterNodeData,
+  DynamicsCompressorNodeData,
+  GainNodeData,
+  nodeTypes
+} from "./nodes/nodeTypes"
 
 import { useAudioGraph } from "./hooks/useAudioGraph";
 import { useVisualization } from "./hooks/useVisualization";
@@ -15,7 +22,9 @@ const Visualizer: React.FC = () => {
   const canvasRefSnapshot = useRef<HTMLCanvasElement | null>(null);
   const canvasRefOriginalSnapshot = useRef<HTMLCanvasElement | null>(null);
 
-  const [visualizationType, setVisualizationType] = useState<"sinewave" | "frequencybars">("sinewave");
+  const [visualizationType, setVisualizationType] = useState<
+    "sinewave" | "frequencybars"
+  >("sinewave");
 
   const [selectedValue, setSelectedValue] = useState<string>('self-configure');
 
@@ -62,14 +71,32 @@ const Visualizer: React.FC = () => {
       snapshotOriginalCanvas &&
       snapshotMixedCanvas
     ) {
-      const ctxOriginal = originalCanvas.getContext("2d", {willReadFrequently: true,});
-      const ctxMixed = mixedCanvas.getContext("2d", {willReadFrequently: true,});
-      const ctxSnapshotOriginal = snapshotOriginalCanvas.getContext("2d", {willReadFrequently: true,});
-      const ctxSnapshotMixed = snapshotMixedCanvas.getContext("2d", {willReadFrequently: true,});
+      const ctxOriginal = originalCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
+      const ctxMixed = mixedCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
+      const ctxSnapshotOriginal = snapshotOriginalCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
+      const ctxSnapshotMixed = snapshotMixedCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
 
       // Get the image data from both original canvases
-      const originalImageData = ctxOriginal!.getImageData(0,0,originalCanvas.width,originalCanvas.height);
-      const mixedImageData = ctxMixed!.getImageData(0,0,mixedCanvas.width,mixedCanvas.height);
+      const originalImageData = ctxOriginal!.getImageData(
+        0,
+        0,
+        originalCanvas.width,
+        originalCanvas.height
+      );
+      const mixedImageData = ctxMixed!.getImageData(
+        0,
+        0,
+        mixedCanvas.width,
+        mixedCanvas.height
+      );
 
       // Set the size of snapshot canvases to match original canvases if they are different
       snapshotOriginalCanvas.width = originalCanvas.width;
@@ -155,31 +182,48 @@ const Visualizer: React.FC = () => {
             }}
           >
             <button
-              onClick={() => handleAddNode("biquadFilter",audioCtx!,source!,analyser!)}
+              onClick={() =>
+                handleAddNode("biquadFilter", audioCtx!, source!, analyser!)
+              }
               style={buttonStyle(false)}
             >
               Add BiquadFilterNode
             </button>
             <br /> <br />
             <button
-              onClick={() => handleAddNode("dynamicsCompressor",audioCtx!,source!,analyser!)}
+              onClick={() =>
+                handleAddNode(
+                  "dynamicsCompressor",
+                  audioCtx!,
+                  source!,
+                  analyser!
+                )
+              }
               style={buttonStyle(false)}
             >
               Add DynamicsCompressorNode
             </button>
             <br /> <br />
             <button
-              onClick={() => handleAddNode("gain",audioCtx!,source!,analyser!)}
+              onClick={() =>
+                handleAddNode("gain", audioCtx!, source!, analyser!)
+              }
               style={buttonStyle(false)}
             >
               Add Gain Node
             </button>
             <br />
             <br />
-            <button onClick={()=>handleReset(audioCtx!,source!,analyser!)} style={filterButton(true)}>
+            <button
+              onClick={() => handleReset(audioCtx!, source!, analyser!)}
+              style={filterButton(true)}
+            >
               RESET
             </button>
-            <button onClick={()=>handleChanges(audioCtx!,source!,analyser!)} style={buttonStyle(true)}>
+            <button
+              onClick={() => handleChanges(audioCtx!, source!, analyser!)}
+              style={buttonStyle(true)}
+            >
               {" "}
               OK{" "}
             </button>
@@ -210,7 +254,7 @@ const Visualizer: React.FC = () => {
                     const node = (selectedNode.data as BiquadFilterNodeData)
                       .audioNode;
                     node.frequency.setValueAtTime(value, audioCtx!.currentTime);
-                    handleChanges(audioCtx!,source!,analyser!); // Update your audio context
+                    handleChanges(audioCtx!, source!, analyser!); // Update your audio context
                   }}
                   style={{ backgroundColor: "white" }}
                 />
@@ -229,7 +273,7 @@ const Visualizer: React.FC = () => {
                     const node = (selectedNode.data as BiquadFilterNodeData)
                       .audioNode;
                     node.Q.setValueAtTime(value, audioCtx!.currentTime);
-                    handleChanges(audioCtx!,source!,analyser!); // Update your audio context
+                    handleChanges(audioCtx!, source!, analyser!); // Update your audio context
                   }}
                   style={{ backgroundColor: "white" }}
                 />
@@ -244,7 +288,7 @@ const Visualizer: React.FC = () => {
                     const node = (selectedNode.data as BiquadFilterNodeData)
                       .audioNode;
                     node.type = value;
-                    handleChanges(audioCtx!,source!,analyser!); // Update your audio context
+                    handleChanges(audioCtx!, source!, analyser!); // Update your audio context
                   }}
                   style={{ backgroundColor: "white" }}
                 >
@@ -294,7 +338,7 @@ const Visualizer: React.FC = () => {
                         value,
                         audioCtx!.currentTime
                       );
-                      handleChanges(audioCtx!,source!,analyser!); // Update your audio context
+                      handleChanges(audioCtx!, source!, analyser!); // Update your audio context
                     }}
                     style={{ backgroundColor: "white" }}
                   />
@@ -317,7 +361,7 @@ const Visualizer: React.FC = () => {
                         selectedNode.data as DynamicsCompressorNodeData
                       ).audioNode;
                       node.knee.setValueAtTime(value, audioCtx!.currentTime);
-                      handleChanges(audioCtx!,source!,analyser!); // Update your audio context
+                      handleChanges(audioCtx!, source!, analyser!); // Update your audio context
                     }}
                     style={{ backgroundColor: "white" }}
                   />
@@ -340,7 +384,7 @@ const Visualizer: React.FC = () => {
                         selectedNode.data as DynamicsCompressorNodeData
                       ).audioNode;
                       node.attack.setValueAtTime(value, audioCtx!.currentTime);
-                      handleChanges(audioCtx!,source!,analyser!); // Update your audio context
+                      handleChanges(audioCtx!, source!, analyser!); // Update your audio context
                     }}
                     style={{ backgroundColor: "white" }}
                   />
@@ -364,7 +408,7 @@ const Visualizer: React.FC = () => {
                         selectedNode.data as DynamicsCompressorNodeData
                       ).audioNode;
                       node.release.setValueAtTime(value, audioCtx!.currentTime);
-                      handleChanges(audioCtx!,source!,analyser!); // Update your audio context
+                      handleChanges(audioCtx!, source!, analyser!); // Update your audio context
                     }}
                     style={{ backgroundColor: "white" }}
                   />
@@ -387,7 +431,7 @@ const Visualizer: React.FC = () => {
                         selectedNode.data as DynamicsCompressorNodeData
                       ).audioNode;
                       node.ratio.setValueAtTime(value, audioCtx!.currentTime);
-                      handleChanges(audioCtx!,source!,analyser!); // Update your audio context
+                      handleChanges(audioCtx!, source!, analyser!); // Update your audio context
                     }}
                     style={{ backgroundColor: "white" }}
                   />
@@ -419,7 +463,7 @@ const Visualizer: React.FC = () => {
                     (selectedNode.data as GainNodeData).gain = value;
                     const node = (selectedNode.data as GainNodeData).audioNode;
                     node.gain.setValueAtTime(value, audioCtx!.currentTime);
-                    handleChanges(audioCtx!,source!,analyser!); // Update your audio context
+                    handleChanges(audioCtx!, source!, analyser!); // Update your audio context
                   }}
                   style={{ backgroundColor: "white" }}
                 />
@@ -442,6 +486,8 @@ const Visualizer: React.FC = () => {
             <Controls />
           </ReactFlow>
 
+          {/* ADD MORE  */}
+
           <div
             style={{
               marginTop: "10%",
@@ -461,17 +507,26 @@ const Visualizer: React.FC = () => {
             </label>
             <br />
             <br />
-            <select style={filterButton(false)}  onChange={handlePresetChange} value= {selectedValue}>
-              <option value="Preset-1">Preset-1</option>
-              <option value="Preset-2">Preset-2</option>
-              <option value="Preset-3">Preset-3</option>
-              <option value="Preset-4">Preset-4</option>
-              <option value="Preset-5">Preset-5</option>
+            <select
+              style={filterButton(false)}
+              onChange={handlePresetChange}
+              value={selectedValue}
+            >
+              <option value="Biquad-Dynamic-Preset">
+                Biquad-Dynamic-Preset
+              </option>
+              <option value="Gain-Biquad-Preset">Gain-Biquad-Preset</option>
+              <option value="Gain-Dynamic-Preset">Gain-Dynamic-Preset</option>
+              <option value="Biquad-Biquad-Preset">Biquad-Biquad-Preset</option>
+              <option value="Dynamic-Gain-Biquad-Preset">
+                Dynamic-Gain-Biquad-Preset
+              </option>
               <option value="self-configure">self-configure</option>
             </select>
           </div>
         </div>
       </div>
+
       <div
         style={{
           display: "flex",
@@ -479,6 +534,17 @@ const Visualizer: React.FC = () => {
           alignItems: "center",
         }}
       >
+        <div style={{ textAlign: "center", margin: "10px", marginTop: "30px" }}>
+          <p
+            style={{
+              writingMode: "vertical-rl",
+              textOrientation: "sideways",
+              transform: "rotate(180deg)",
+            }}
+          >
+            Amplitude(dB)
+          </p>
+        </div>
         <div style={{ textAlign: "center", margin: "10px", marginTop: "30px" }}>
           <p
             style={{
@@ -502,6 +568,17 @@ const Visualizer: React.FC = () => {
         <div style={{ textAlign: "center", margin: "10px", marginTop: "30px" }}>
           <p
             style={{
+              writingMode: "vertical-rl",
+              textOrientation: "sideways",
+              transform: "rotate(180deg)",
+            }}
+          >
+            Amplitude(dB)
+          </p>
+        </div>
+        <div style={{ textAlign: "center", margin: "10px", marginTop: "30px" }}>
+          <p
+            style={{
               fontWeight: "bold",
               marginBottom: "5px",
               fontSize: "18px",
@@ -518,6 +595,49 @@ const Visualizer: React.FC = () => {
               boxSizing: "border-box",
             }}
           />
+        </div>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            textAlign: "center",
+            margin: "0px 500px",
+          }}
+        >
+          {
+          (visualizationType==='frequencybars') && <p
+            style={{
+              marginBottom: "5px",
+              fontSize: "18px",
+            }}
+          >
+            Frequency (Hz)
+          </p>
+          }
+
+        </div>
+        <div
+          style={{
+            textAlign: "center",
+            margin: "0px 500px",
+          }}
+        >
+          {
+          (visualizationType==='frequencybars') && <p
+            style={{
+              marginBottom: "5px",
+              fontSize: "18px",
+            }}
+          >
+            Frequency (Hz)
+          </p>
+          }
         </div>
       </div>
       <div
